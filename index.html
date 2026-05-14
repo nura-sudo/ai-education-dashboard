@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教育数据资产总览看板</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: radial-gradient(circle at 20% 20%, #10294a 0%, #071526 45%, #040b16 100%);
+            font-family: "Microsoft YaHei", sans-serif;
+            color: #e5f1ff;
+            overflow: hidden;
+        }
+        .container {
+            width: 100%;
+            height: 100vh;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .header {
+            height: 58px;
+            border: 1px solid rgba(96, 165, 250, 0.35);
+            border-radius: 8px;
+            background: linear-gradient(90deg, rgba(30, 58, 138, 0.45), rgba(59, 130, 246, 0.2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+        .top-board {
+            height: 110px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .metric {
+            background: rgba(12, 34, 60, 0.82);
+            border: 1px solid rgba(96, 165, 250, 0.28);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
+        }
+        .metric .label { color: #9ec5ff; font-size: 13px; }
+        .metric .value {
+            color: #f8fbff;
+            font-size: 30px;
+            font-weight: 700;
+            line-height: 1;
+            text-shadow: 0 0 8px rgba(96, 165, 250, 0.4);
+        }
+        .metric .desc { color: #7ca3db; font-size: 12px; }
+        .main {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 12px;
+        }
+        .left, .center, .right {
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .panel {
+            background: rgba(10, 30, 54, 0.82);
+            border: 1px solid rgba(96, 165, 250, 0.28);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .panel-title {
+            font-size: 15px;
+            color: #b7d6ff;
+            padding-left: 8px;
+            border-left: 3px solid #4ea0ff;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+        .chart-box { flex: 1; min-height: 190px; }
+        #subjectBubble { min-height: 320px; }
+        #graphRadar { min-height: 280px; }
+        @media (max-width: 1400px) {
+            .metric .value { font-size: 24px; }
+            .panel-title { font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">齐鲁师范学院人工智能教育研究院</div>
+
+        <section class="top-board">
+            <div class="metric">
+                <div class="label">当前仓储总容量</div>
+                <div class="value">3.5 PB</div>
+                <div class="desc">PB/TB 级统一资产池</div>
+            </div>
+            <div class="metric">
+                <div class="label">已归档数据集</div>
+                <div class="value">1,240 个</div>
+                <div class="desc">覆盖教研/教学/评测场景</div>
+            </div>
+            <div class="metric">
+                <div class="label">知识图谱节点/实体</div>
+                <div class="value">2.1 亿</div>
+                <div class="desc">AI 底层结构化教育实体</div>
+            </div>
+            <div class="metric">
+                <div class="label">核心模态种类</div>
+                <div class="value">4 类</div>
+                <div class="desc">文本 / 音频 / 视频 / 图像</div>
+            </div>
+        </section>
+
+        <section class="main">
+            <aside class="left">
+                <div class="panel" style="flex: 1.05;">
+                    <div class="panel-title">数据模态分布层级（多层圆环）</div>
+                    <div class="chart-box" id="modalityRing"></div>
+                </div>
+                <div class="panel" style="flex: 0.95;">
+                    <div class="panel-title">数据集加工深度/资产状态（百分比堆叠）</div>
+                    <div class="chart-box" id="assetStack"></div>
+                </div>
+            </aside>
+
+            <main class="center">
+                <div class="panel" style="flex: 1.1;">
+                    <div class="panel-title">学科与知识领域数据规模（气泡堆叠图）</div>
+                    <div class="chart-box" id="subjectBubble"></div>
+                </div>
+                <div class="panel" style="flex: 0.9;">
+                    <div class="panel-title">知识图谱与图结构总览（拓扑背景 + 雷达图）</div>
+                    <div class="chart-box" id="graphRadar"></div>
+                </div>
+            </main>
+
+            <aside class="right">
+                <div class="panel" style="flex: 1.05;">
+                    <div class="panel-title">细分业务数据集 TOP 榜（极坐标条形）</div>
+                    <div class="chart-box" id="topPolar"></div>
+                </div>
+                <div class="panel" style="flex: 0.95;">
+                    <div class="panel-title">教育学段数据覆盖度（南丁格尔玫瑰）</div>
+                    <div class="chart-box" id="stageRose"></div>
+                </div>
+            </aside>
+        </section>
+    </div>
+
+    <script>
+        const textColor = "#dbeafe";
+        const axisColor = "#2f4f75";
+        const colors = ["#3b82f6", "#22c55e", "#f59e0b", "#a855f7", "#06b6d4", "#ef4444", "#60a5fa"];
+
+        const modalityRing = echarts.init(document.getElementById("modalityRing"));
+        const assetStack = echarts.init(document.getElementById("assetStack"));
+        const subjectBubble = echarts.init(document.getElementById("subjectBubble"));
+        const graphRadar = echarts.init(document.getElementById("graphRadar"));
+        const topPolar = echarts.init(document.getElementById("topPolar"));
+        const stageRose = echarts.init(document.getElementById("stageRose"));
+
+        modalityRing.setOption({
+            color: colors,
+            tooltip: { trigger: "item" },
+            legend: { show: false },
+            series: [
+                {
+                    name: "模态一级",
+                    type: "pie",
+                    center: ["50%", "50%"],
+                    radius: [0, "28%"],
+                    label: {
+                        show: true,
+                        color: textColor,
+                        fontSize: 11,
+                        formatter: "{b}"
+                    },
+                    labelLine: { show: false },
+                    data: [
+                        { value: 46, name: "文本" },
+                        { value: 22, name: "视频" },
+                        { value: 18, name: "图像" },
+                        { value: 14, name: "音频" }
+                    ]
+                },
+                {
+                    name: "模态二级",
+                    type: "pie",
+                    center: ["50%", "50%"],
+                    radius: ["42%", "66%"],
+                    minShowLabelAngle: 6,
+                    avoidLabelOverlap: true,
+                    label: {
+                        color: textColor,
+                        fontSize: 10,
+                        formatter: function (p) {
+                            return p.name.length > 7 ? p.name.slice(0, 7) + "..." : p.name;
+                        }
+                    },
+                    labelLine: {
+                        length: 16,
+                        length2: 12,
+                        lineStyle: { width: 1.2 }
+                    },
+                    data: [
+                        { value: 20, name: "阅读理解语料" },
+                        { value: 14, name: "古诗词/文言文" },
+                        { value: 12, name: "教师授课视频" },
+                        { value: 10, name: "实验操作视频" },
+                        { value: 11, name: "题目图像" },
+                        { value: 9, name: "英语口语音频" },
+                        { value: 8, name: "课堂音频切片" }
+                    ]
+                }
+            ]
+        });
+
+        assetStack.setOption({
+            tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+            legend: { top: 0, textStyle: { color: textColor, fontSize: 11 } },
+            grid: { left: 12, right: 18, top: 34, bottom: 20, containLabel: true },
+            xAxis: { type: "value", max: 100, axisLabel: { color: textColor, formatter: "{value}%" }, axisLine: { lineStyle: { color: axisColor } } },
+            yAxis: { type: "category", data: ["文本", "音频", "视频", "图像"], axisLabel: { color: textColor }, axisLine: { lineStyle: { color: axisColor } } },
+            series: [
+                { name: "原始采集", type: "bar", stack: "total", data: [45, 52, 40, 48] },
+                { name: "清洗标准化", type: "bar", stack: "total", data: [35, 28, 34, 30] },
+                { name: "高精标注", type: "bar", stack: "total", data: [20, 20, 26, 22] }
+            ],
+            color: ["#3b82f6", "#22c55e", "#f59e0b"]
+        });
+
+        subjectBubble.setOption({
+            tooltip: {
+                formatter: function (p) {
+                    return `${p.data[3]}<br/>体量：${p.data[2]} TB`;
+                }
+            },
+            xAxis: {
+                type: "category",
+                data: ["基础学科", "语言人文", "理工专题", "综合素养"],
+                axisLabel: { color: textColor },
+                axisLine: { lineStyle: { color: axisColor } }
+            },
+            yAxis: {
+                type: "value",
+                name: "数据规模 (TB)",
+                nameTextStyle: { color: textColor },
+                axisLabel: { color: textColor },
+                axisLine: { lineStyle: { color: axisColor } },
+                splitLine: { lineStyle: { color: "rgba(126,163,209,0.18)" } }
+            },
+            grid: { left: 45, right: 20, top: 24, bottom: 32 },
+            series: [{
+                type: "scatter",
+                data: [
+                    [0, 460, 460, "数学-代数几何"],
+                    [0, 380, 380, "物理-力学电磁"],
+                    [1, 420, 420, "语文-古诗词"],
+                    [1, 360, 360, "英语-阅读理解"],
+                    [2, 300, 300, "化学-实验专题"],
+                    [2, 260, 260, "生物-知识网络"],
+                    [3, 240, 240, "跨学科项目"],
+                    [3, 210, 210, "心理与德育素材"]
+                ],
+                symbolSize: function (val) { return Math.sqrt(val[2]) * 2.2; },
+                itemStyle: {
+                    color: function (p) { return colors[p.dataIndex % colors.length]; },
+                    shadowBlur: 10,
+                    shadowColor: "rgba(59,130,246,0.45)"
+                },
+                label: { show: true, formatter: "{@3}", color: "#d6e8ff", fontSize: 11 }
+            }]
+        });
+
+        const radarValues = [92, 88, 85, 90, 84, 87];
+        graphRadar.setOption({
+            backgroundColor: "transparent",
+            graphic: [
+                {
+                    type: "group",
+                    left: "center",
+                    top: "middle",
+                    children: Array.from({ length: 55 }).map(() => ({
+                        type: "circle",
+                        shape: {
+                            cx: Math.random() * 620 - 310,
+                            cy: Math.random() * 280 - 140,
+                            r: Math.random() * 2.8 + 1
+                        },
+                        style: {
+                            fill: "rgba(96,165,250,0.15)"
+                        }
+                    }))
+                }
+            ],
+            radar: {
+                center: ["50%", "52%"],
+                radius: "60%",
+                indicator: [
+                    { name: "概念关系密度", max: 100 },
+                    { name: "跨学科连接", max: 100 },
+                    { name: "题型映射率", max: 100 },
+                    { name: "知识点覆盖率", max: 100 },
+                    { name: "层级深度", max: 100 },
+                    { name: "可追溯性", max: 100 }
+                ],
+                axisName: { color: textColor, fontSize: 11 },
+                splitLine: { lineStyle: { color: "rgba(126,163,209,0.28)" } },
+                splitArea: { areaStyle: { color: ["rgba(30,58,138,0.05)", "rgba(59,130,246,0.03)"] } },
+                axisLine: { lineStyle: { color: "rgba(126,163,209,0.35)" } }
+            },
+            series: [{
+                type: "radar",
+                data: [{ value: radarValues, name: "图结构强度" }],
+                lineStyle: { color: "#3b82f6", width: 2 },
+                itemStyle: { color: "#22c55e" },
+                areaStyle: { color: "rgba(59,130,246,0.3)" }
+            }]
+        });
+
+        topPolar.setOption({
+            angleAxis: {
+                type: "category",
+                data: ["选择题题库", "教师授课视频片段", "英语口语音频", "作文批改语料", "阅读理解材料", "实验操作视频", "错题诊断样本"],
+                axisLabel: { color: textColor, fontSize: 10 },
+                axisLine: { lineStyle: { color: axisColor } }
+            },
+            radiusAxis: {
+                min: 0,
+                max: 1000,
+                interval: 200,
+                axisLabel: { color: textColor },
+                axisLine: { lineStyle: { color: axisColor } },
+                splitLine: { lineStyle: { color: "rgba(126,163,209,0.18)" } },
+                axisLabel: {
+                    color: textColor,
+                    formatter: function (value) {
+                        return value >= 600 ? value : "";
+                    }
+                }
+            },
+            polar: {},
+            tooltip: { trigger: "item" },
+            series: [{
+                type: "bar",
+                data: [980, 860, 780, 690, 610, 530, 470],
+                coordinateSystem: "polar",
+                roundCap: true,
+                itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: "#3b82f6" }, { offset: 1, color: "#22c55e" }]) }
+            }]
+        });
+
+        stageRose.setOption({
+            color: ["#60a5fa", "#34d399", "#f59e0b"],
+            tooltip: { trigger: "item" },
+            legend: { bottom: 0, textStyle: { color: textColor } },
+            series: [{
+                name: "教育学段覆盖",
+                type: "pie",
+                radius: [24, 95],
+                center: ["50%", "46%"],
+                roseType: "area",
+                itemStyle: { borderRadius: 3 },
+                data: [
+                    { value: 420, name: "小学" },
+                    { value: 380, name: "初中" },
+                    { value: 350, name: "高中" }
+                ],
+                label: { color: textColor }
+            }]
+        });
+
+        window.addEventListener("resize", function () {
+            modalityRing.resize();
+            assetStack.resize();
+            subjectBubble.resize();
+            graphRadar.resize();
+            topPolar.resize();
+            stageRose.resize();
+        });
+    </script>
+</body>
+</html>
